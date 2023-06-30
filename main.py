@@ -1,9 +1,10 @@
 from builtins import min
 from enum import Enum
 from turtle import title
+from typing import re
 
 from fastapi import Body, FastAPI, Query, Path
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, HttpUrl
 
 
 app = FastAPI()
@@ -184,25 +185,59 @@ app = FastAPI()
 
 ##Part 8 -> Body -> Fields
 
+# class Item(BaseModel):
+#     name: str
+#     description: str | None = Field(None, title="the description of the item", max_length=300)
+#     price: float = Field(..., gt=0, description="The price must be greater than zero")
+#     tax: float | None = None
+#
+#
+# @app.put("/items/{item_id}")
+# async def update_item(item_id: int, item: Item = Body(..., embed=True)):
+#     results = {"item_id": item_id, "item": item}
+#     return results
+
+## Part 9 -> Body - Nested Models
+
+class Image(BaseModel):
+    url: HttpUrl
+    name: str
+
+
 class Item(BaseModel):
     name: str
-    description: str | None = Field(None, title="the description of the item", max_length=300)
-    price: float = Field(..., gt=0, description="The price must be greater than zero")
+    description: str | None = None
+    price = float
     tax: float | None = None
+    tags: set[str] = []
+    image: list[Image] | None = None
+
+
+class Offer(BaseModel):
+    name: str
+    description: str | None = None
+    price: float
+    items: list[Item]
 
 
 @app.put("/items/{item_id}")
-async def update_item(item_id: int, item: Item = Body(..., embed=True)):
+async def update_item(item_id: int, item: Item):
     results = {"item_id": item_id, "item": item}
     return results
 
 
+@app.put("/offers")
+async def create_offer(offer: Offer = Body(..., embed=True)):
+    return offer
 
 
+@app.put("/images/multiple")
+async def create_mutiple_images(images: list[Image] = Body(..., embed=True)):
+    return images
 
 
-
-
-
+@app.post("/blah")
+async def create_some_blahs(blahs: dict[int, float]):
+    return blahs
 
 
