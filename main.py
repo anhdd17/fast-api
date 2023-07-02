@@ -5,7 +5,7 @@ from typing import Literal, Union
 from uuid import UUID
 from turtle import title
 
-from fastapi import Body, FastAPI, Query, Path, Cookie, Header
+from fastapi import Body, FastAPI, Query, Path, Cookie, Header, status, Form, File, UploadFile
 from pydantic import BaseModel, Field, HttpUrl, EmailStr
 
 
@@ -387,83 +387,148 @@ app = FastAPI()
 #     return items[item_id]
 
 ##Part14: Extra Model
-class UserBase(BaseModel):
-    username: str
-    email: EmailStr | None = None
-    full_name: str | None = None
+# class UserBase(BaseModel):
+#     username: str
+#     email: EmailStr | None = None
+#     full_name: str | None = None
+#
+#
+# class UserIn(UserBase):
+#     password: str
+#
+#
+# class UserOut(UserBase):
+#     pass
+#
+#
+# class UserInDB(UserBase):
+#     hashed_password: str
+#
+#
+# def fake_password_hasher(raw_password: str):
+#     return f"supersecrete{raw_password}"
+#
+#
+# def fake_save_user(user_in: UserIn):
+#     hashed_password = fake_password_hasher(user_in.password)
+#     user_in_db = UserInDB(**user_in.dict(), hashed_password=hashed_password)
+#     print("User 'save'")
+#     return user_in_db
+#
+# @app.post("/user/", response_model=UserOut)
+# async def create_user(user_in: UserIn):
+#     user_saved = fake_save_user(user_in)
+#     return user_saved
+#
+#
+# class BaseItem(BaseModel):
+#     description: str
+#     type: str
+#
+#
+# class CarItem(BaseItem):
+#     type = "car"
+#
+#
+# class PlaneItem(BaseItem):
+#     type = "plane"
+#     size: int
+#
+#
+# items = {
+#     "item1": {
+#         "description": "all mu friends drive a low rider",
+#         "type": "car"
+#     },
+#     "item2": {
+#         "description": "music is my aeroplane",
+#         "type": "plane",
+#         "size": 5
+#
+#     }
+# }
+#
+#
+# @app.get("/items/{item_id}", response_model= PlaneItem | CarItem)
+# async def read_item(item_id: Literal["item1", "item2"]):
+#     return items[item_id]
+#
+#
+# class ListItem(BaseModel):
+#     name: str
+#     description: str
+#
+#
+# list_items = [
+#     {"name": "Foo", "description": "There comes my hero"},
+#     {"name": "Red", "description": "It ies my aeroplane"},
+# ]
+#
+# @app.get("/list_items/", response_model=list[ListItem])
+# async def read_items():
+#     return items
+#
+#
+# @app.get("/arbitrary", response_model=dict[str, float])
+# async def get_arbitrary():
+#     return {"foo": 1, "bar": "2"}
 
 
-class UserIn(UserBase):
-    password: str
+##Part 15 - Response Status Code
+# @app.post("/items/", status_code=status.HTTP_201_CREATED)
+# async def create_item(name: str):
+#     return {"name": name}
+#
+#
+# @app.delete("/items/{pk}", status_code=status.HTTP_204_NO_CONTENT)
+# async def delete_item(pk:str):
+#     print("pk", pk)
+#     return pk
+#
+#
+# @app.get("/items/", status_code=status.HTTP_302_FOUND)
+# async def read_items_redirect():
+#     return {"hello": "world"}
 
+##Part 16 - Form Fields
+# class User(BaseModel):
+#     username: str
+#     password: str
+#
+#
+# @app.post("/login/")
+# async def login(username: str = Form(...), password: str = Form(...)):
+#     print("password", password)
+#     return {"username": username}
+#
+#
+# @app.post("/login-json")
+# async def login_json(username: str = Body(...), password: str = Body(...)):
+#     return {"username": username}
 
-class UserOut(UserBase):
-    pass
+##Part 17 - Request File
+# @app.post("/files/")
+# async def create_file(files: list[bytes] | None = File(..., description="A file read as bytes")):
+#     return {"file_size": [len(file) for file in files]}
+#
+# @app.post("/uploadfile/")
+# async def create_upload_file(files: list[UploadFile] = File(..., description="A file read as UploadFile")):
+#     return {"filename": [file.filename for file in files]}
 
-
-class UserInDB(UserBase):
-    hashed_password: str
-
-
-def fake_password_hasher(raw_password: str):
-    return f"supersecrete{raw_password}"
-
-
-def fake_save_user(user_in: UserIn):
-    hashed_password = fake_password_hasher(user_in.password)
-    user_in_db = UserInDB(**user_in.dict(), hashed_password=hashed_password)
-    print("User 'save'")
-    return user_in_db
-
-@app.post("/user/", response_model=UserOut)
-async def create_user(user_in: UserIn):
-    user_saved = fake_save_user(user_in)
-    return user_saved
-
-
-class BaseItem(BaseModel):
-    description: str
-    type: str
-
-
-class CarItem(BaseItem):
-    type = "car"
-
-
-class PlaneItem(BaseItem):
-    type = "plane"
-    size: int
-
-
-items = {
-    "item1": {
-        "description": "all mu friends drive a low rider",
-        "type": "car"
-    },
-    "item2": {
-        "description": "music is my aeroplane",
-        "type": "plane",
-        "size": 5
-
+## Part 18 - Request Forms and Files
+@app.post("/items/")
+async def create_file(
+  file: bytes = File(...), fileb : UploadFile = File(...), token: str = Form(...)
+):
+    return {
+        "file_size": len(file),
+        "token": token,
+        "file_content_type": fileb.content_type,
+        # "hello": hello
     }
-}
 
 
-@app.get("/items/{item_id}", response_model= PlaneItem | CarItem)
-async def read_item(item_id: Literal["item1", "item2"]):
-    return items[item_id]
 
 
-class ListItem(BaseModel):
-    name: str
-    description: str
-
-
-list_items = [
-    {"name": "Foo", "description": "There comes my hero"},
-    {"name": "Red", "description": "It ies my aeroplane"},
-]
-
-app.get("/list_items/", response_model=list[ListItem])
 
 
